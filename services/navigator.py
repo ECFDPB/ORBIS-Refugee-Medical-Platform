@@ -70,21 +70,37 @@ Instructions:
 """
 
 
-def _retrieve_context(question: str) -> str:
-    """Simple keyword-based retrieval from knowledge base."""
+def _retrieve_context(question: str) -> tuple[str, list[dict]]:
+    """Simple keyword-based retrieval from knowledge base. Returns (context_text, matched_entries)."""
     q_lower = question.lower()
     matched = []
     for entry in NHS_KNOWLEDGE_BASE:
         score = sum(1 for kw in entry["keywords"] if kw in q_lower)
         if score > 0:
-            matched.append((score, entry["content"]))
+            matched.append((score, entry))
     matched.sort(key=lambda x: x[0], reverse=True)
-    # Return top 2 matches
-    top = [c for _, c in matched[:2]]
+    top = matched[:2]
     if not top:
-        # Fallback: return general rights + GP info
-        top = [NHS_KNOWLEDGE_BASE[0]["content"], NHS_KNOWLEDGE_BASE[6]["content"]]
-    return "\n\n---\n\n".join(top)
+        top = [(0, NHS_KNOWLEDGE_BASE[0]), (0, NHS_KNOWLEDGE_BASE[6])]
+    context_text = "\n\n---\n\n".join(e["content"] for _, e in top)
+    sources = [{"topic": e["topic"]} for _, e in top]
+    return context_text, sources
+
+
+def _extract_sources(entries: list[dict]) -> list[dict]:
+    """Extract URL sources from knowledge base entries."""
+    sources = []
+    for entry in entries:
+        content = entry.get("content", "")
+        for line in content.splitlines():
+            line = line.strip()
+            if line.startswith("Source:") and "http" in line:
+                # e.g. "Source: NHS — https://..."
+                parts = line.split("http", 1)
+                url = "http" + parts[1].strip()
+                label = parts[0].replace("Source:", "").replace("—", "").strip() or "NHS"
+                sources.append({"label": label, "url": url})
+    return sources
 
 
 def _is_refused(question: str) -> bool:
@@ -100,17 +116,20 @@ def answer_navigation_question(question: str) -> dict:
                 "I'm not able to advise on medical diagnoses or treatments. "
                 "Please speak to your GP or call NHS 111 (free, 24/7, interpreters available)."
             ),
+            "sources": [{"label": "NHS 111", "url": "https://111.nhs.uk"}],
             "mode": "refused",
             "disclaimer": DISCLAIMER,
         }
 
-    context = _retrieve_context(question)
+    context, matched_entries = _retrieve_context(question)
+    sources = _extract_sources(matched_entries)
     model = genai.GenerativeModel(GEMINI_MODEL)
     prompt = _NAVIGATOR_PROMPT.format(context=context, question=question)
     response = model.generate_content(prompt)
 
     return {
         "answer": response.text.strip(),
+        "sources": sources,
         "mode": "navigator",
         "disclaimer": DISCLAIMER,
     }

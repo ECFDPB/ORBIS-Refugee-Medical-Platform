@@ -44,14 +44,16 @@ async def get_merged_passport(authorization: Optional[str] = Header(None)):
         raise HTTPException(404, "No documents found.")
 
     doc_ids = [d["id"] for d in docs.data]
-    passports = db.table("health_passports").select("structured_json").in_("document_id", doc_ids).execute()
+    passports = db.table("health_passports").select("structured_json, document_id").in_("document_id", doc_ids).execute()
 
     if not passports.data:
         raise HTTPException(404, "No passports found.")
 
     merged = {
+        "document_id": passports.data[-1]["document_id"],  # most recent doc for risk lookup
         "conditions": [], "medications": [], "allergies": [],
-        "tests": [], "follow_up": [], "red_flags": [], "summary_plain_english": ""
+        "tests": [], "follow_up": [], "red_flags": [], "summary_plain_english": "",
+        "patient_confirmed": False,
     }
 
     for p in passports.data:
@@ -63,6 +65,11 @@ async def get_merged_passport(authorization: Optional[str] = Header(None)):
                     merged[key].append(item)
         if sj.get("summary_plain_english"):
             merged["summary_plain_english"] = sj["summary_plain_english"]
+
+    # Check if latest passport is confirmed
+    latest = db.table("health_passports").select("patient_confirmed").eq("document_id", merged["document_id"]).single().execute()
+    if latest.data:
+        merged["patient_confirmed"] = latest.data.get("patient_confirmed", False)
 
     return merged
 

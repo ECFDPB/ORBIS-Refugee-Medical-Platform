@@ -14,7 +14,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 _PASSPORT_PROMPT = """
 You are a medical document summariser helping refugee patients.
 Given the following English medical text, extract and return ONLY a JSON object
-with these exact fields. Write ALL text values in {language}.
+with these exact fields. Write ALL text values in English.
 
 {{
   "document_type": "<discharge_summary | prescription | referral | test_result | other>",
@@ -25,7 +25,7 @@ with these exact fields. Write ALL text values in {language}.
   "tests": ["test name and result"],
   "follow_up": ["follow-up instructions"],
   "red_flags": ["urgent warnings the patient must know"],
-  "summary_plain_english": "2-3 sentence summary in {language}"
+  "summary_plain_english": "2-3 sentence plain English summary"
 }}
 
 Medical text:
@@ -38,19 +38,11 @@ Return ONLY valid JSON. No explanation, no markdown.
 def generate_passport(english_text: str, user_lang: str = "en") -> PassportSchema:
     """
     Call Gemini to generate structured passport from English translation.
-    Output language is controlled by user_lang (DeepL/ISO code).
+    All output is always in English regardless of user_lang.
     Returns PassportSchema.
     """
-    # Map language codes to readable names for the prompt
-    lang_names = {
-        "zh": "Simplified Chinese", "en": "English", "es": "Spanish",
-        "pl": "Polish", "ro": "Romanian", "ar": "Arabic", "fr": "French",
-        "fa": "Persian", "uk": "Ukrainian", "ru": "Russian", "tr": "Turkish",
-    }
-    language = lang_names.get(user_lang.lower(), "English")
-
     model = genai.GenerativeModel(GEMINI_MODEL)
-    prompt = _PASSPORT_PROMPT.format(text=english_text, language=language)
+    prompt = _PASSPORT_PROMPT.format(text=english_text)
     response = model.generate_content(prompt)
     raw = response.text.strip()
 

@@ -36,6 +36,20 @@
   </div>
 </div>
 
+<!-- Consent modal — shown before file is processed -->
+<div class="modal-overlay" id="consent-modal">
+  <div class="modal">
+    <div class="modal-title" style="margin-bottom:12px;" id="lbl-consent-title"></div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:4px;" id="lbl-consent-body"></div>
+    <ul style="font-size:12px;color:var(--text-muted);padding-left:18px;margin:10px 0 16px;line-height:1.8;" id="lbl-consent-list"></ul>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;" id="lbl-consent-note"></div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn btn-outline btn-sm" onclick="declineConsent()" id="btn-consent-decline"></button>
+      <button class="btn btn-primary btn-sm" onclick="acceptConsent()" id="btn-consent-accept"></button>
+    </div>
+  </div>
+</div>
+
 <!-- Processing modal -->
 <div class="modal-overlay" id="processing-modal">
   <div class="modal text-center">
@@ -133,6 +147,14 @@
     document.getElementById('btn-invalid-ok').textContent = bilingual('confirm');
     document.getElementById('lbl-success').textContent = t('upload_success');
     document.getElementById('lbl-success-en').textContent = lang === 'en' ? '' : T['en']['upload_success'];
+    // Consent modal
+    document.getElementById('lbl-consent-title').textContent = t('consent_title');
+    document.getElementById('lbl-consent-body').textContent = t('consent_body');
+    const items = t('consent_items');
+    document.getElementById('lbl-consent-list').innerHTML = (Array.isArray(items) ? items : []).map(i => '<li>' + i + '</li>').join('');
+    document.getElementById('lbl-consent-note').textContent = t('consent_note');
+    document.getElementById('btn-consent-accept').textContent = t('consent_accept');
+    document.getElementById('btn-consent-decline').textContent = t('consent_decline');
   }
 
   // Drag and drop
@@ -143,11 +165,31 @@
     e.preventDefault();
     zone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (file) showConsent(file);
   });
   document.getElementById('file-input').addEventListener('change', e => {
-    if (e.target.files[0]) handleFile(e.target.files[0]);
+    if (e.target.files[0]) showConsent(e.target.files[0]);
   });
+
+  let pendingFile = null;
+
+  function showConsent(file) {
+    pendingFile = file;
+    render();
+    document.getElementById('consent-modal').classList.add('active');
+  }
+
+  function acceptConsent() {
+    document.getElementById('consent-modal').classList.remove('active');
+    if (pendingFile) handleFile(pendingFile);
+    pendingFile = null;
+  }
+
+  function declineConsent() {
+    document.getElementById('consent-modal').classList.remove('active');
+    pendingFile = null;
+    document.getElementById('file-input').value = '';
+  }
 
   async function handleFile(file) {
     document.getElementById('processing-modal').classList.add('active');

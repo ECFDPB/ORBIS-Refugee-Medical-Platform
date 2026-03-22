@@ -11,11 +11,17 @@ from services.ocr import extract_text
 from services.translation import detect_language, translate_to_english, translate_to_language
 from services.ai_check import check_translation_risk
 from services.passport import generate_passport
+from services.pii_redact import redact_pii
 from database import get_db, get_authed_db
 from config import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_MB, SUPABASE_BUCKET
+import logging
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 MAX_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+# Safe logger — never log document content
+logger = logging.getLogger("documents")
+logger.setLevel(logging.INFO)
 
 
 def _get_user(authorization: Optional[str]) -> dict:
@@ -129,13 +135,17 @@ async def _process_document(doc_id: str, file_bytes: bytes, filename: str, user_
         else:
             db.table("documents").update({"source_language": source_lang}).eq("id", doc_id).execute()
 
-        # Step 3: Translate to English
-        english_text = translate_to_english(ocr_text, source_lang=source_lang)
+        # Step 3: PII redaction before sending to external services
+        redacted_text, redacted_fields = redact_pii(ocr_text)
+        logger.info("PII redaction complete for doc_id=%s, fields=%s", doc_id, redacted_fields)
 
-        # Step 4: Translate to user language
+        # Step 4: Translate to English (using redacted text)
+        english_text = translate_to_english(redacted_text, source_lang=source_lang)
+
+        # Step 5: Translate to user language
         user_lang_text = translate_to_language(english_text, target_lang=user_lang)
 
-        # Save translations
+        # Save translations (store original ocr_text in DB, redacted used for APIs)
         db.table("document_texts").upsert({
             "document_id": doc_id,
             "ocr_text": ocr_text,
@@ -144,8 +154,8 @@ async def _process_document(doc_id: str, file_bytes: bytes, filename: str, user_
         }).execute()
         set_status(DocumentStatus.translation_complete)
 
-        # Step 5: AI risk check
-        risk = check_translation_risk(ocr_text, english_text)
+        # Step 6: AI risk check (on redacted text)
+        risk = check_translation_risk(redacted_text, english_text)
         db.table("risk_checks").upsert({
             "document_id": doc_id,
             "risk_score": risk.risk_score,
@@ -155,8 +165,8 @@ async def _process_document(doc_id: str, file_bytes: bytes, filename: str, user_
         if risk.requires_review:
             set_status(DocumentStatus.needs_user_review)
 
-        # Step 6: Generate passport
-        passport = generate_passport(english_text, user_lang=user_lang)
+        # Step 7: Generate passport (on redacted text)
+        passport = generate_passport(redacted_text, user_lang=user_lang)
         db.table("health_passports").upsert({
             "document_id": doc_id,
             "structured_json": passport.model_dump(),
@@ -166,10 +176,11 @@ async def _process_document(doc_id: str, file_bytes: bytes, filename: str, user_
         if not risk.requires_review:
             set_status(DocumentStatus.passport_generated)
 
-    except Exception as e:
+    except Exception:
+        logger.error("Processing failed for doc_id=%s", doc_id)
         db.table("documents").update({
             "status": DocumentStatus.failed,
-            "error_message": str(e),
+            "error_message": "Processing failed. Please try again.",
         }).eq("id", doc_id).execute()
         raise
 
