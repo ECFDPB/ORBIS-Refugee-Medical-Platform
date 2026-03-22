@@ -100,6 +100,6 @@ The demo is available at `http://localhost:8000` after running `uvicorn main:app
 
 ## Demo Video
 
-[![ORBIS Demo](static/img/introduction1.png)](https://vimeo.com/1175911385)
+[![Watch the demo on Vimeo](https://vumbnail.com/1175911385.jpg)](https://vimeo.com/1175911385)
 
-> Full demo video: https://vimeo.com/1175911385
+> https://vimeo.com/1175911385
