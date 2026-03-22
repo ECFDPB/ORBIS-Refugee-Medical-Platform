@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0">
+  <title>ORBIS</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <style>
+    .phone-frame {
+      background: url('/static/img/photos1.png') center center / cover no-repeat;
+      position: relative;
+      filter: brightness(1.15);
+    }
+    .splash-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.05);
+    }
+    .splash-text {
+      position: absolute;
+      top: 52px;
+      left: 28px;
+      right: 16px;
+    }
+    .splash-title-top {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a6fd4;
+      letter-spacing: 1px;
+      line-height: 1.2;
+      text-shadow: 0 2px 8px rgba(255,255,255,0.7);
+    }
+    .splash-title-bottom {
+      font-size: 56px;
+      font-weight: 800;
+      color: #1a6fd4;
+      letter-spacing: 2px;
+      line-height: 1.1;
+      text-shadow: 0 2px 8px rgba(255,255,255,0.7);
+    }
+    .splash-subtitle {
+      font-size: 12px;
+      font-weight: 400;
+      color: #6ab0e8;
+      margin-top: 6px;
+      text-shadow: 0 1px 6px rgba(255,255,255,0.6);
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="splash-overlay"></div>
+  <div class="splash-text">
+    <div class="splash-title-top">Welcome to</div>
+    <div class="splash-title-bottom">ORBIS</div>
+    <div class="splash-subtitle">Medical Passports for Immigrants and Refugees</div>
+  </div>
+</div>
+<script>
+  setTimeout(() => { window.location.href = '/login'; }, 2000);
+</script>
+</body>
+</html>

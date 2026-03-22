@@ -1,0 +1,24 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic[email]
+supabase
+jinja2
+python-multipart
+
+# OCR
+pymupdf
+google-cloud-vision
+
+# Translation
+deepl
+
+# Language detection
+langdetect
+
+# AI (Gemini)
+google-generativeai
+
+# Local OCR fallback (optional)
+# pytesseract
+# Pillow

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0">
+  <title>Upload</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <script src="/static/js/i18n.js"></script>
+  <style>
+    .phone-frame { background: url('/static/img/photos3.png') center center / cover no-repeat; }
+    .nav-title-wrap { display:flex; flex-direction:column; line-height:1.3; }
+    .nav-title-primary { font-size:16px; font-weight:700; color:var(--text-dark); }
+    .nav-title-secondary { font-size:12px; color:var(--text-muted); font-weight:400; }
+  </style>
+  <script src="/static/js/transition.js"></script>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="page-content">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="navigateTo('/home')">←</button>
+      <div class="nav-title-wrap">
+        <span class="nav-title-primary" id="nav-title-primary"></span>
+        <span class="nav-title-secondary" id="nav-title-secondary"></span>
+      </div>
+    </div>
+
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png">
+      <img src="/static/img/icon2.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:10px;">
+      <div class="upload-label-primary" id="lbl-upload-hint"></div>
+      <div class="upload-label-secondary" id="lbl-upload-hint-en"></div>
+      <div class="upload-label-secondary" id="lbl-drag-hint"></div>
+      <div class="upload-label-secondary" id="lbl-upload-sub"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Processing modal -->
+<div class="modal-overlay" id="processing-modal">
+  <div class="modal text-center">
+    <div style="font-size:36px;margin-bottom:12px;">⏳</div>
+    <div class="modal-title" id="lbl-processing"></div>
+    <div class="modal-subtitle" id="lbl-processing-en"></div>
+    <div style="margin-top:16px;">
+      <div style="height:4px;background:#e8edee;border-radius:4px;overflow:hidden;">
+        <div id="progress-bar" style="height:100%;width:0%;background:var(--nhs-blue);transition:width 0.5s;border-radius:4px;"></div>
+      </div>
+      <div style="margin-top:8px;font-size:13px;color:var(--text-muted);" id="status-label"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Passport preview modal -->
+<div class="modal-overlay" id="passport-modal">
+  <div class="modal">
+    <div id="risk-banner-area"></div>
+    <div class="modal-title" id="lbl-passport-preview"></div>
+    <div style="margin-top:12px;" id="passport-table-area"></div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-outline btn-sm" onclick="openEditMode()" id="btn-edit"></button>
+      <button class="btn btn-primary btn-sm" onclick="confirmPassport()" id="btn-confirm"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title" id="lbl-edit-title"></div>
+    <div style="margin-top:12px;" id="edit-form-area"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-sm" onclick="closeEditModal()" id="btn-edit-cancel"></button>
+      <button class="btn btn-primary btn-sm" onclick="submitEdit()" id="btn-edit-save"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit invalid modal -->
+<div class="modal-overlay" id="invalid-modal">
+  <div class="modal text-center">
+    <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
+    <div class="modal-title" id="lbl-invalid"></div>
+    <div class="modal-subtitle" id="lbl-invalid-en"></div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn btn-primary btn-sm" onclick="closeInvalidModal()" id="btn-invalid-ok"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Success modal -->
+<div class="modal-overlay" id="success-modal">
+  <div class="modal text-center">
+    <div style="font-size:36px;margin-bottom:12px;">✅</div>
+    <div class="modal-title" id="lbl-success"></div>
+    <div class="modal-subtitle" id="lbl-success-en"></div>
+  </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+  if (!localStorage.getItem('access_token')) window.location.href = '/login';
+
+  let currentDocId = null;
+  let currentPassport = null;
+  let pollInterval = null;
+
+  const STATUS_PROGRESS = {
+    'upload': 10, 'ocr_complete': 30, 'translation_complete': 60,
+    'needs_user_review': 80, 'passport_generated': 100, 'failed': 100
+  };
+  const STATUS_LABELS = {
+    'upload': 'Uploading…', 'ocr_complete': 'Reading document…',
+    'translation_complete': 'Translating…', 'needs_user_review': 'Review needed…',
+    'passport_generated': 'Done!', 'failed': 'Failed'
+  };
+
+  function render() {
+    const lang = getLang();
+    document.getElementById('nav-title-primary').textContent = t('upload_doc');
+    document.getElementById('nav-title-secondary').textContent = lang === 'en' ? '' : T['en']['upload_doc'];
+    document.getElementById('lbl-upload-hint').textContent = t('upload_hint');
+    document.getElementById('lbl-upload-hint-en').textContent = lang === 'en' ? '' : T['en']['upload_hint'];
+    document.getElementById('lbl-drag-hint').textContent = t('drag_hint');
+    document.getElementById('lbl-upload-sub').textContent = t('upload_sub');
+    document.getElementById('lbl-processing').textContent = t('processing');
+    document.getElementById('lbl-processing-en').textContent = lang === 'en' ? '' : T['en']['processing'];
+    document.getElementById('lbl-passport-preview').textContent = bilingual('passport_title');
+    document.getElementById('btn-edit').textContent = bilingual('edit');
+    document.getElementById('btn-confirm').textContent = bilingual('confirm');
+    document.getElementById('lbl-edit-title').textContent = bilingual('edit');
+    document.getElementById('btn-edit-cancel').textContent = bilingual('cancel');
+    document.getElementById('btn-edit-save').textContent = bilingual('confirm');
+    document.getElementById('lbl-invalid').textContent = t('edit_invalid');
+    document.getElementById('lbl-invalid-en').textContent = lang === 'en' ? '' : T['en']['edit_invalid'];
+    document.getElementById('btn-invalid-ok').textContent = bilingual('confirm');
+    document.getElementById('lbl-success').textContent = t('upload_success');
+    document.getElementById('lbl-success-en').textContent = lang === 'en' ? '' : T['en']['upload_success'];
+  }
+
+  // Drag and drop
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+  document.getElementById('file-input').addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  async function handleFile(file) {
+    document.getElementById('processing-modal').classList.add('active');
+    try {
+      const doc = await API.uploadDocument(file);
+      currentDocId = doc.id;
+      pollStatus();
+    } catch(e) {
+      document.getElementById('processing-modal').classList.remove('active');
+      alert('Upload failed: ' + e.message);
+    }
+  }
+
+  function pollStatus() {
+    pollInterval = setInterval(async () => {
+      try {
+        const doc = await API.getDocument(currentDocId);
+        const pct = STATUS_PROGRESS[doc.status] || 0;
+        document.getElementById('progress-bar').style.width = pct + '%';
+        document.getElementById('status-label').textContent = STATUS_LABELS[doc.status] || doc.status;
+
+        if (doc.status === 'passport_generated' || doc.status === 'needs_user_review') {
+          clearInterval(pollInterval);
+          await showPassportPreview();
+        } else if (doc.status === 'failed') {
+          clearInterval(pollInterval);
+          document.getElementById('processing-modal').classList.remove('active');
+          alert('Processing failed: ' + (doc.error_message || 'Unknown error'));
+        }
+      } catch(e) {}
+    }, 2500);
+  }
+
+  async function showPassportPreview() {
+    try {
+      const [passport, risk, textData] = await Promise.all([
+        API.getPassport(currentDocId),
+        API.getRisk(currentDocId).catch(() => null),
+        API.getDocumentText(currentDocId).catch(() => null)
+      ]);
+      currentPassport = passport.structured_json;
+
+      // Risk banner
+      const riskArea = document.getElementById('risk-banner-area');
+      riskArea.innerHTML = '';
+      if (risk && (risk.risk_score === 'high' || risk.risk_score === 'medium')) {
+        const cls = risk.risk_score === 'high' ? 'risk-high' : 'risk-medium';
+        const msg = risk.risk_score === 'high' ? t('risk_high') : t('risk_medium');
+        let html = `<div class="risk-banner ${cls}">${msg}`;
+        if (risk.issues && risk.issues.length) {
+          html += '<ul style="margin-top:6px;padding-left:16px;">';
+          risk.issues.forEach(i => { html += `<li>${i}</li>`; });
+          html += '</ul>';
+        }
+        html += '</div>';
+        riskArea.innerHTML = html;
+      }
+
+      // Show user language translation as reference if available
+      if (textData && textData.user_language_translation) {
+        const refArea = document.getElementById('risk-banner-area');
+        const refHtml = `<div style="background:#f0f4f5;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:#4c6272;">
+          <div style="font-weight:600;margin-bottom:4px;">${bilingual('field_summary')}</div>
+          <div style="white-space:pre-wrap;">${textData.user_language_translation.slice(0, 400)}${textData.user_language_translation.length > 400 ? '…' : ''}</div>
+        </div>`;
+        riskArea.innerHTML += refHtml;
+      }
+
+      renderPassportTable(currentPassport, 'passport-table-area', false);
+      document.getElementById('processing-modal').classList.remove('active');
+      document.getElementById('passport-modal').classList.add('active');
+    } catch(e) {
+      document.getElementById('processing-modal').classList.remove('active');
+      alert('Error loading passport: ' + e.message);
+    }
+  }
+
+  function renderPassportTable(data, containerId, editable) {
+    const fields = [
+      ['field_conditions', 'conditions'],
+      ['field_medications', 'medications'],
+      ['field_allergies', 'allergies'],
+      ['field_tests', 'tests'],
+      ['field_follow_up', 'follow_up'],
+      ['field_red_flags', 'red_flags'],
+      ['field_summary', 'summary_plain_english'],
+    ];
+    let html = '<table class="passport-table">';
+    fields.forEach(([labelKey, dataKey]) => {
+      const val = data[dataKey];
+      const display = Array.isArray(val) ? val.join(', ') : (val || '');
+      const label = bilingual(labelKey);
+      if (editable) {
+        html += `<tr><td>${label}</td><td><textarea class="editable-field" data-key="${dataKey}">${display}</textarea></td></tr>`;
+      } else {
+        const isRedFlag = dataKey === 'red_flags' && Array.isArray(val) && val.length;
+        const cellContent = isRedFlag
+          ? val.map(f => `<span class="red-flag-badge">${f}</span>`).join(' ')
+          : display;
+        html += `<tr><td>${label}</td><td>${cellContent || '—'}</td></tr>`;
+      }
+    });
+    html += '</table>';
+    document.getElementById(containerId).innerHTML = html;
+  }
+
+  function openEditMode() {
+    document.getElementById('passport-modal').classList.remove('active');
+    renderPassportTable(currentPassport, 'edit-form-area', true);
+    document.getElementById('edit-modal').classList.add('active');
+  }
+
+  function closeEditModal() {
+    document.getElementById('edit-modal').classList.remove('active');
+    document.getElementById('passport-modal').classList.add('active');
+  }
+
+  async function submitEdit() {
+    const fields = document.querySelectorAll('#edit-form-area [data-key]');
+    const edited = { ...currentPassport };
+    fields.forEach(f => {
+      const key = f.dataset.key;
+      const val = f.value.trim();
+      if (Array.isArray(currentPassport[key])) {
+        edited[key] = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+      } else {
+        edited[key] = val;
+      }
+    });
+
+    try {
+      const result = await API.validateEdit(currentDocId, edited);
+      if (result.valid) {
+        currentPassport = edited;
+        await API.confirmPassport(currentDocId, true, edited);
+        document.getElementById('edit-modal').classList.remove('active');
+        showSuccess();
+      } else {
+        document.getElementById('edit-modal').classList.remove('active');
+        document.getElementById('invalid-modal').classList.add('active');
+      }
+    } catch(e) {
+      document.getElementById('edit-modal').classList.remove('active');
+      document.getElementById('invalid-modal').classList.add('active');
+    }
+  }
+
+  function closeInvalidModal() {
+    document.getElementById('invalid-modal').classList.remove('active');
+    document.getElementById('edit-modal').classList.add('active');
+  }
+
+  async function confirmPassport() {
+    try {
+      await API.confirmPassport(currentDocId, true);
+      document.getElementById('passport-modal').classList.remove('active');
+      showSuccess();
+    } catch(e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  function showSuccess() {
+    document.getElementById('success-modal').classList.add('active');
+    setTimeout(() => {
+      document.getElementById('success-modal').classList.remove('active');
+      navigateTo('/home');
+    }, 2000);
+  }
+
+  render();
+</script>
+</body>
+</html>

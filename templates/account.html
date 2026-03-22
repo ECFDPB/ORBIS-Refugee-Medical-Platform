@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0">
+  <title>Account — ORBIS</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <script src="/static/js/i18n.js"></script>
+  <style>
+    .phone-frame { background: url('/static/img/photos3.png') center center / cover no-repeat; }
+    .nav-title-wrap { display:flex; flex-direction:column; line-height:1.3; }
+    .nav-title-primary { font-size:16px; font-weight:700; color:var(--text-dark); }
+    .nav-title-secondary { font-size:12px; color:var(--text-muted); font-weight:400; }
+  </style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="page-content">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="navigateTo('/home')">←</button>
+      <div class="nav-title-wrap">
+        <span class="nav-title-primary" id="nav-title-primary"></span>
+        <span class="nav-title-secondary" id="nav-title-secondary"></span>
+      </div>
+    </div>
+    <div class="menu-card">
+      <div class="menu-item" onclick="openLangModal()">
+        <div class="menu-item-text">
+          <div class="menu-item-primary" id="lbl-change-lang"></div>
+          <div class="menu-item-secondary" id="lbl-change-lang-en"></div>
+        </div>
+      </div>
+      <div class="menu-item" onclick="openDeleteModal()">
+        <div class="menu-item-text">
+          <div class="menu-item-primary text-danger" id="lbl-delete"></div>
+          <div class="menu-item-secondary" id="lbl-delete-en"></div>
+        </div>
+      </div>
+      <div class="menu-item" onclick="doLogout()">
+        <div class="menu-item-text">
+          <div class="menu-item-primary" id="lbl-logout"></div>
+          <div class="menu-item-secondary" id="lbl-logout-en"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Language modal -->
+<div class="modal-overlay" id="lang-modal">
+  <div class="modal">
+    <div class="modal-title" id="lbl-select-lang"></div>
+    <div style="margin-top:12px;" id="lang-list"></div>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div class="modal-title" id="lbl-del-confirm"></div>
+    <div class="modal-subtitle" id="lbl-del-warning"></div>
+    <div class="modal-actions" style="justify-content:center;">
+      <button class="btn btn-outline btn-sm" onclick="closeDeleteModal()" id="btn-cancel"></button>
+      <button class="btn btn-danger btn-sm" onclick="doDelete()" id="btn-confirm-del"></button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script src="/static/js/transition.js"></script>
+<script>
+  if (!localStorage.getItem('access_token')) window.location.href = '/login';
+
+  function render() {
+    const lang = getLang();
+    document.getElementById('nav-title-primary').textContent = t('manage_account');
+    document.getElementById('nav-title-secondary').textContent = lang === 'en' ? '' : T['en']['manage_account'];
+    document.getElementById('lbl-change-lang').textContent = t('change_lang');
+    document.getElementById('lbl-change-lang-en').textContent = lang === 'en' ? '' : T['en']['change_lang'];
+    document.getElementById('lbl-delete').textContent = t('delete_data');
+    document.getElementById('lbl-delete-en').textContent = lang === 'en' ? '' : T['en']['delete_data'];
+    document.getElementById('lbl-logout').textContent = t('logout');
+    document.getElementById('lbl-logout-en').textContent = lang === 'en' ? '' : T['en']['logout'];
+    document.getElementById('lbl-select-lang').textContent = t('select_lang');
+    document.getElementById('lbl-del-confirm').textContent = t('delete_confirm');
+    document.getElementById('lbl-del-warning').textContent = t('delete_warning');
+    document.getElementById('btn-cancel').textContent = t('cancel');
+    document.getElementById('btn-confirm-del').textContent = t('confirm');
+  }
+
+  function openLangModal() {
+    const list = document.getElementById('lang-list');
+    list.innerHTML = '';
+    const cur = getLang();
+    LANGUAGES.forEach(l => {
+      const btn = document.createElement('button');
+      btn.className = 'lang-btn' + (l.code === cur ? ' active' : '');
+      btn.textContent = l.label;
+      btn.onclick = async () => {
+        setLang(l.code);
+        try { await API.updateLang(l.code); } catch(e) {}
+        document.getElementById('lang-modal').classList.remove('active');
+        render();
+      };
+      list.appendChild(btn);
+    });
+    document.getElementById('lang-modal').classList.add('active');
+  }
+
+  function openDeleteModal() {
+    document.getElementById('delete-modal').classList.add('active');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').classList.remove('active');
+  }
+
+  async function doDelete() {
+    try {
+      await API.deleteAllData();
+      navigateTo('/home');
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  async function doLogout() {
+    try { await API.logout(); } catch(e) {}
+    localStorage.clear();
+    navigateTo('/login');
+  }
+
+  render();
+</script>
+</body>
+</html>

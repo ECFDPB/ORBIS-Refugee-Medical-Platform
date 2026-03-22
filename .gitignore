@@ -1,0 +1,19 @@
+# Environment variables — NEVER commit these
+.env
+
+# Google Cloud credentials JSON
+*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/

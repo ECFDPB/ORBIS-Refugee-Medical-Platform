@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0">
+  <title>Home — ORBIS</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <script src="/static/js/i18n.js"></script>
+  <style>
+    .phone-frame {
+      background: url('/static/img/photos3.png') center center / cover no-repeat;
+    }
+    .home-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 16px;
+    }
+    .passport-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1.5px solid #b8d4f0;
+      padding: 20px;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      text-decoration: none;
+    }
+    .passport-card:hover { opacity: 0.9; }
+    .passport-card-icon {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .passport-card-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .menu-item-icon {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 18px 20px;
+      cursor: pointer;
+      border-bottom: 1px solid #e8edee;
+      min-height: 72px;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item:hover { background: #f0f4f5; }
+    .menu-item-text { display: flex; flex-direction: column; }
+  </style>
+</head>
+<body>
+<div class="phone-frame">
+  <div class="page-content">
+    <!-- Passport card -->
+    <a class="passport-card" href="/passport-view">
+      <img src="/static/img/icon1.png" class="passport-card-icon" alt="passport">
+      <div class="passport-card-text">
+        <div class="menu-item-primary" id="lbl-passport"></div>
+        <div class="menu-item-secondary" id="lbl-passport-en"></div>
+      </div>
+    </a>
+
+    <!-- Bottom menu card -->
+    <div class="menu-card">
+      <a class="menu-item" href="/upload">
+        <img src="/static/img/icon2.png" class="menu-item-icon" alt="">
+        <div class="menu-item-text">
+          <div class="menu-item-primary" id="lbl-upload"></div>
+          <div class="menu-item-secondary" id="lbl-upload-en"></div>
+        </div>
+      </a>
+      <a class="menu-item" href="/nhs-nav">
+        <img src="/static/img/icon3.png" class="menu-item-icon" alt="">
+        <div class="menu-item-text">
+          <div class="menu-item-primary" id="lbl-nhs"></div>
+          <div class="menu-item-secondary" id="lbl-nhs-en"></div>
+        </div>
+      </a>
+      <a class="menu-item" href="/account">
+        <img src="/static/img/icon 4.png" class="menu-item-icon" alt="">
+        <div class="menu-item-text">
+          <div class="menu-item-primary" id="lbl-account"></div>
+          <div class="menu-item-secondary" id="lbl-account-en"></div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  if (!localStorage.getItem('access_token')) window.location.href = '/login';
+
+  function render() {
+    const lang = getLang();
+    document.getElementById('lbl-passport').textContent = t('passport_title');
+    document.getElementById('lbl-passport-en').textContent = lang === 'en' ? '' : T['en']['passport_title'];
+    document.getElementById('lbl-upload').textContent = t('upload_doc');
+    document.getElementById('lbl-upload-en').textContent = lang === 'en' ? '' : T['en']['upload_doc'];
+    document.getElementById('lbl-nhs').textContent = t('nhs_nav');
+    document.getElementById('lbl-nhs-en').textContent = lang === 'en' ? '' : T['en']['nhs_nav'];
+    document.getElementById('lbl-account').textContent = t('manage_account');
+    document.getElementById('lbl-account-en').textContent = lang === 'en' ? '' : T['en']['manage_account'];
+  }
+
+  window.addEventListener('pageshow', render);
+  render();
+</script>
+<script src="/static/js/transition.js"></script>
+</body>
+</html>
