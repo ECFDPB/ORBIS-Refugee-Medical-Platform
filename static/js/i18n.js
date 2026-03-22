@@ -40,8 +40,7 @@ const T = {
     coming_soon: '即将推出', coming_soon_en: 'Coming Soon',
     no_passport: '暂无医疗护照，请先上传医疗文档', no_passport_en: 'No passport yet. Please upload a medical document first.',
     select_lang: '选择常用语言', select_lang_en: 'Select Preferred Language',
-    chat_placeholder: '输入问题…', chat_welcome: '你好！我是你的 NHS 导航助手。你可以问我关于 NHS 服务、你的权利或如何获得医疗帮助的问题。',
-  },
+    chat_placeholder: '输入问题…', chat_welcome: '你好！我是你的 NHS 导航助手。你可以问我关于 NHS 服务、你的权利或如何获得医疗帮助的问题。', export_passport: '导出医疗护照',  },
   en: {
     upload: 'Upload', login: 'Login', logout: 'Logout', back: 'Back',
     username: 'Email', password: 'Password', preferred_lang: 'Preferred Language',
@@ -75,7 +74,7 @@ const T = {
     coming_soon: 'Coming Soon', coming_soon_en: 'Coming Soon',
     no_passport: 'No passport yet. Please upload a medical document first.', no_passport_en: 'No passport yet. Please upload a medical document first.',
     select_lang: 'Select Preferred Language', select_lang_en: 'Select Preferred Language',
-    chat_placeholder: 'Ask a question…', chat_welcome: 'Hello! I\'m your NHS Navigator. Ask me anything about NHS services, your rights, or how to access care.',
+    chat_placeholder: 'Ask a question…', chat_welcome: 'Hello! I\'m your NHS Navigator. Ask me anything about NHS services, your rights, or how to access care.', export_passport: 'Export Medical Passport',
   },
   es: {
     upload: 'Subir', login: 'Iniciar sesión', logout: 'Cerrar sesión', back: 'Volver',
@@ -110,7 +109,7 @@ const T = {
     coming_soon: 'Próximamente', coming_soon_en: 'Coming Soon',
     no_passport: 'Sin pasaporte aún. Sube un documento primero.', no_passport_en: 'No passport yet. Please upload a medical document first.',
     select_lang: 'Seleccionar idioma', select_lang_en: 'Select Preferred Language',
-    chat_placeholder: 'Escribe una pregunta…', chat_welcome: '¡Hola! Soy tu navegador NHS. Pregúntame sobre servicios NHS, tus derechos o cómo acceder a la atención médica.',
+    chat_placeholder: 'Escribe una pregunta…', chat_welcome: '¡Hola! Soy tu navegador NHS. Pregúntame sobre servicios NHS, tus derechos o cómo acceder a la atención médica.', export_passport: 'Exportar Pasaporte Médico',
   },
   pl: {
     upload: 'Prześlij', login: 'Zaloguj się', logout: 'Wyloguj się', back: 'Wróć',
@@ -145,7 +144,7 @@ const T = {
     coming_soon: 'Wkrótce', coming_soon_en: 'Coming Soon',
     no_passport: 'Brak paszportu. Najpierw prześlij dokument medyczny.', no_passport_en: 'No passport yet. Please upload a medical document first.',
     select_lang: 'Wybierz język', select_lang_en: 'Select Preferred Language',
-    chat_placeholder: 'Zadaj pytanie…', chat_welcome: 'Cześć! Jestem Twoim nawigatorem NHS. Zapytaj mnie o usługi NHS, Twoje prawa lub jak uzyskać opiekę medyczną.',
+    chat_placeholder: 'Zadaj pytanie…', chat_welcome: 'Cześć! Jestem Twoim nawigatorem NHS. Zapytaj mnie o usługi NHS, Twoje prawa lub jak uzyskać opiekę medyczną.', export_passport: 'Eksportuj Paszport Medyczny',
   },
   ro: {
     upload: 'Încarcă', login: 'Conectare', logout: 'Deconectare', back: 'Înapoi',
@@ -180,7 +179,7 @@ const T = {
     coming_soon: 'În curând', coming_soon_en: 'Coming Soon',
     no_passport: 'Niciun pașaport încă. Încarcă mai întâi un document.', no_passport_en: 'No passport yet. Please upload a medical document first.',
     select_lang: 'Selectează limba', select_lang_en: 'Select Preferred Language',
-    chat_placeholder: 'Pune o întrebare…', chat_welcome: 'Bună! Sunt navigatorul tău NHS. Întreabă-mă despre serviciile NHS, drepturile tale sau cum să accesezi îngrijiri medicale.',
+    chat_placeholder: 'Pune o întrebare…', chat_welcome: 'Bună! Sunt navigatorul tău NHS. Întreabă-mă despre serviciile NHS, drepturile tale sau cum să accesezi îngrijiri medicale.', export_passport: 'Exportați Pașaportul Medical',
   },
 };
 

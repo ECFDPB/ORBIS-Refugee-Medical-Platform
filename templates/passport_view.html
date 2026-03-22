@@ -3,143 +3,157 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=390, initial-scale=1.0">
-  <title>Passport — ORBIS</title>
+  <title>Passport - ORBIS</title>
   <link rel="stylesheet" href="/static/css/main.css">
-  <script src="/static/js/i18n.js"></script>
+  <script src="/static/js/i18n.js?v=4"></script>
   <style>
     .phone-frame { background: url('/static/img/photos3.png') center center / cover no-repeat; }
-    .nav-title-wrap {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.3;
+    .nav-title-wrap { display:flex; flex-direction:column; line-height:1.3; }
+    .nav-title-primary { font-size:16px; font-weight:700; color:var(--text-dark); }
+    .nav-title-secondary { font-size:12px; color:var(--text-muted); font-weight:400; }
+    .passport-glass {
+      position: absolute;
+      top: 50%;
+      left: 14px;
+      right: 14px;
+      transform: translateY(-50%);
+      background: rgba(220,235,250,0.60);
+      backdrop-filter: blur(8px);
+      border-radius: 20px;
+      border: 1.5px solid rgba(184,212,240,0.7);
+      padding: 20px 16px 16px;
+      max-height: 72%;
+      overflow-y: auto;
+      z-index: 2;
     }
-    .nav-title-primary {
-      font-size: 16px;
+    .field-label-primary { font-size:13px; font-weight:600; color:var(--text-dark); }
+    .btn-export {
+      display: block;
+      width: 100%;
+      margin-top: 18px;
+      padding: 13px;
+      background: #2e9e6e;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 14px;
       font-weight: 700;
-      color: var(--text-dark);
+      cursor: pointer;
+      text-align: center;
+      transition: opacity 0.2s;
     }
-    .nav-title-secondary {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-weight: 400;
-    }
-    .field-label-primary {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-    .field-label-secondary {
-      font-size: 11px;
-      color: #8fa3b1;
-      font-weight: 400;
-      margin-top: 2px;
+    .btn-export:hover { opacity: 0.88; }
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { position:fixed; top:0; left:0; width:100%; padding:32px; background:white; }
+      .passport-table { width:100%; border-collapse:collapse; }
+      .passport-table td { padding:10px 8px; border-bottom:1px solid #ddd; font-size:13px; vertical-align:top; }
+      .passport-table td:first-child { font-weight:600; color:#555; width:35%; }
+      .red-flag-badge { background:#fde8e6; color:#d5281b; border-radius:6px; padding:2px 7px; font-size:12px; }
+      .print-header { margin-bottom:24px; }
+      .print-header h1 { font-size:22px; color:#005EB8; margin:0 0 4px; }
+      .print-header p { font-size:12px; color:#666; margin:0; }
     }
   </style>
 </head>
 <body>
 <div class="phone-frame">
-  <div class="page-content">
-    <div class="nav-bar">
-      <button class="nav-back" onclick="navigateTo('/home')">←</button>
-      <div class="nav-title-wrap">
-        <span class="nav-title-primary" id="nav-title-primary"></span>
-        <span class="nav-title-secondary" id="nav-title-secondary"></span>
-      </div>
+  <div class="nav-bar" style="position:relative;z-index:3;">
+    <button class="nav-back" onclick="navigateTo('/home')">&#8592;</button>
+    <div class="nav-title-wrap">
+      <span class="nav-title-primary" id="nav-title-primary"></span>
+      <span class="nav-title-secondary" id="nav-title-secondary"></span>
     </div>
-    <div class="card" id="passport-card">
-      <div style="text-align:center;padding:20px 0;color:var(--text-muted);" id="loading-msg"></div>
-    </div>
+  </div>
+  <div class="passport-glass" id="passport-card">
+    <div style="text-align:center;padding:20px 0;color:var(--text-dark);" id="loading-msg"></div>
   </div>
 </div>
 
-<script src="/static/js/api.js"></script>
+<div id="print-area" style="display:none;">
+  <div class="print-header">
+    <h1>ORBIS - Medical Health Passport</h1>
+    <p id="print-date"></p>
+  </div>
+  <div id="print-table"></div>
+</div>
+
+<script src="/static/js/api.js?v=4"></script>
 <script src="/static/js/transition.js"></script>
 <script>
   if (!localStorage.getItem('access_token')) window.location.href = '/login';
 
-  const FIELDS = [
-    ['field_conditions', 'conditions'],
-    ['field_medications', 'medications'],
-    ['field_allergies', 'allergies'],
-    ['field_red_flags', 'red_flags'],
-    ['field_tests', 'tests'],
-    ['field_follow_up', 'follow_up'],
-    ['field_summary', 'summary_plain_english'],
+  var FIELDS = [
+    ['field_conditions','conditions'],
+    ['field_medications','medications'],
+    ['field_allergies','allergies'],
+    ['field_red_flags','red_flags'],
+    ['field_tests','tests'],
+    ['field_follow_up','follow_up'],
+    ['field_summary','summary_plain_english']
   ];
 
+  function splitSentences(str) {
+    var idx = str.search(/\.\s+/);
+    if (idx === -1) return [str, ''];
+    return [str.slice(0, idx+1).trim(), str.slice(idx+1).trim()];
+  }
+
   function render() {
-    const lang = getLang();
+    var lang = getLang();
     document.getElementById('nav-title-primary').textContent = t('passport_title');
     document.getElementById('nav-title-secondary').textContent = lang === 'en' ? '' : T['en']['passport_title'];
-
-    // Build bilingual two-line "no passport" message
-    function splitSentences(str) {
-      // Split on '. ' or '。' keeping both parts
-      const idx = str.search(/\.\s+|。/);
-      if (idx === -1) return [str, ''];
-      const first = str.slice(0, idx + 1).trim();
-      const second = str.slice(idx + 1).trim();
-      return [first, second];
-    }
-
-    const noNative = t('no_passport');
-    const noEn = T['en']['no_passport'];
-
-    let msgHtml;
+    var noNative = t('no_passport');
+    var noEn = T['en']['no_passport'];
+    var msgHtml;
     if (lang === 'zh') {
-      const [e1, e2] = splitSentences(noEn);
-      msgHtml = `<span>${noNative}</span><br>`
-              + `<span style="font-size:12px;color:#8fa3b1;">${e1}</span><br>`
-              + `<span style="font-size:12px;color:#8fa3b1;">${e2}</span>`;
+      var p = splitSentences(noEn);
+      msgHtml = '<span>'+noNative+'</span><br><span style="font-size:12px;color:#8fa3b1;">'+p[0]+'</span><br><span style="font-size:12px;color:#8fa3b1;">'+p[1]+'</span>';
     } else if (lang === 'en') {
-      const [s1, s2] = splitSentences(noEn);
-      msgHtml = `<span>${s1}</span><br><span>${s2}</span>`;
+      var p = splitSentences(noEn);
+      msgHtml = '<span>'+p[0]+'</span><br><span>'+p[1]+'</span>';
     } else {
-      const [n1, n2] = splitSentences(noNative);
-      const [e1, e2] = splitSentences(noEn);
-      msgHtml = `<span>${n1}</span><br><span>${n2}</span><br>`
-              + `<span style="font-size:12px;color:#8fa3b1;">${e1}</span><br>`
-              + `<span style="font-size:12px;color:#8fa3b1;">${e2}</span>`;
+      var np = splitSentences(noNative); var ep = splitSentences(noEn);
+      msgHtml = '<span>'+np[0]+'</span><br><span>'+np[1]+'</span><br><span style="font-size:12px;color:#8fa3b1;">'+ep[0]+'</span><br><span style="font-size:12px;color:#8fa3b1;">'+ep[1]+'</span>';
     }
     document.getElementById('loading-msg').innerHTML = msgHtml;
   }
 
   async function loadPassport() {
-    try {
-      const data = await API.getMergedPassport();
-      renderPassport(data);
-    } catch(e) {
-      // re-use the same bilingual render so it doesn't get overwritten
-      render();
-    }
+    try { var data = await API.getMergedPassport(); renderPassport(data); }
+    catch(e) { render(); }
   }
 
   function renderPassport(data) {
-    const lang = getLang();
-    let html = '<table class="passport-table">';
-    FIELDS.forEach(([labelKey, dataKey]) => {
-      const val = data[dataKey];
-      if (!val || (Array.isArray(val) && val.length === 0)) return;
-
-      // Two-line label: native language on top, English below
-      const labelNative = t(labelKey);
-      const labelEn = T['en'][labelKey];
-      const labelHtml = lang === 'en'
-        ? `<div class="field-label-primary">${labelNative}</div>`
-        : `<div class="field-label-primary">${labelNative}</div><div class="field-label-secondary">${labelEn}</div>`;
-
-      let cellContent;
-      if (dataKey === 'red_flags' && Array.isArray(val)) {
-        cellContent = val.map(f => `<span class="red-flag-badge">${f}</span>`).join(' ');
+    var lang = getLang();
+    var tbl = '<table class="passport-table">';
+    FIELDS.forEach(function(pair) {
+      var val = data[pair[1]];
+      if (!val || (Array.isArray(val) && val.length===0)) return;
+      var lbl = '<div class="field-label-primary">'+(T['en'][pair[0]]||pair[0])+'</div>';
+      var cell;
+      if (pair[1]==='red_flags' && Array.isArray(val)) {
+        cell = val.map(function(f){return '<span class="red-flag-badge">'+f+'</span>';}).join(' ');
       } else if (Array.isArray(val)) {
-        cellContent = val.map(v => `<div style="margin-bottom:3px;">• ${v}</div>`).join('');
-      } else {
-        cellContent = val;
-      }
-      html += `<tr><td>${labelHtml}</td><td>${cellContent}</td></tr>`;
+        cell = val.map(function(v){return '<div style="margin-bottom:3px;">- '+v+'</div>';}).join('');
+      } else { cell = val; }
+      tbl += '<tr><td>'+lbl+'</td><td>'+cell+'</td></tr>';
     });
-    html += '</table>';
-    document.getElementById('passport-card').innerHTML = html;
+    tbl += '</table>';
+    var exportNative = t('export_passport') || 'Export';
+    var exportLabel = lang==='en' ? 'Export Medical Passport (PDF)' : exportNative+' / Export Medical Passport (PDF)';
+    var btn = '<button class="btn-export" onclick="exportPDF()">'+exportLabel+'</button>';
+    document.getElementById('passport-card').innerHTML = tbl + btn;
+    document.getElementById('print-date').textContent = 'Generated: '+new Date().toLocaleDateString('en-GB');
+    var t2 = document.querySelector('#passport-card .passport-table');
+    if (t2) document.getElementById('print-table').innerHTML = t2.outerHTML;
+  }
+
+  function exportPDF() {
+    document.getElementById('print-area').style.display = 'block';
+    window.print();
+    document.getElementById('print-area').style.display = 'none';
   }
 
   render();
