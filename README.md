@@ -2,10 +2,14 @@
 
 *A Hack the Globe Project*
 
+![Introduction](static/img/introduction1.png)
+
 AI-powered healthcare navigation platform that helps refugees and migrants access NHS services in their own language.
 It bridges the gap between non-English-speaking patients and the UK healthcare system through verified multilingual support, structured health data, and guided NHS navigation.
 Language barriers can cost lives; being in the business of saving and improving lives,
-it’s time that the NHS spoke every language, catered to all needs, and left no patient behind.
+it's time that the NHS spoke every language, catered to all needs, and left no patient behind.
+
+![Overview](static/img/introduction2.png)
 
 ## Contents
 
@@ -39,7 +43,7 @@ The navigator has 3 endpoints:
 This holds information about the user based on their conversation and document uploaded in the system.
 An AI agent is used to summarise all the information into a *structured* JSON object.
 The information is stored in `PostgreSQL` database via `Supabase`, a cloud database provider.
-For **privacy** purpose, we don't store information that can identify the user on the cloud.
+For **privacy** purpose, PII is redacted before being sent to any third-party service.
 
 We provide general RESTful API for getting, updating and deleting a *Passport*.
 When the user edits their *Passport*, we use an AI agent to help ensure that valid information is supplied.
@@ -83,9 +87,19 @@ They can delete all their data at any time from the account settings.
 Users can delete all their data (documents, passport, translations, risk checks) at any time from the account management page.
 This triggers a full cascade delete across all related database tables, leaving no residual records.
 
+![Screenshots](static/img/introduction3.png)
+
+![Screenshots](static/img/introduction4.png)
+
 ## Usage
 
 Before using, please fill all relevant API keys in `.env`.
 An example for this is available in `.env.example`.
 
 The demo is available at `http://localhost:8000` after running `uvicorn main:app`.
+
+## Demo Video
+
+[![ORBIS Demo](static/img/introduction1.png)](https://vimeo.com/1175911385)
+
+> Full demo video: https://vimeo.com/1175911385
