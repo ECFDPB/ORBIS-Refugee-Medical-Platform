@@ -100,6 +100,4 @@ The demo is available at `http://localhost:8000` after running `uvicorn main:app
 
 ## Demo Video
 
-[![Watch the demo on Vimeo](https://vumbnail.com/1175911385.jpg)](https://vimeo.com/1175911385)
-
-> https://vimeo.com/1175911385
+https://vimeo.com/1175911385
