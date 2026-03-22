@@ -18,7 +18,3 @@ langdetect
 
 # AI (Gemini)
 google-generativeai
-
-# Local OCR fallback (optional)
-# pytesseract
-# Pillow

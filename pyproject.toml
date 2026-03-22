@@ -1,0 +1,29 @@
+[project]
+name = "orbis"
+version = "0.1.0"
+authors = [
+	{ name = "ECFDPB" }
+	{ name = "ckgxrg" }
+]
+readme = "README.md"
+license = "MIT"
+keywords = ["ai", "health", "refugee"]
+dynamic = ["version"]
+
+dependencies = [
+	"fastapi"
+	"uvicorn[standard]"
+	"python-dotenv"
+	"pydantic[email]"
+	"supabase"
+	"jinja2"
+	"python-multipart"
+	"pymupdf"
+	"google-cloud-vision"
+	"deepl"
+	"langdetect"
+	"google-generativeai"
+]
+
+[project.scripts]
+orbis = "main:app"
