@@ -88,4 +88,4 @@ This triggers a full cascade delete across all related database tables, leaving 
 Before using, please fill all relevant API keys in `.env`.
 An example for this is available in `.env.example`.
 
-The demo is available at `https://localhost:8000` after running `univorn main:app`.
+The demo is available at `http://localhost:8000` after running `uvicorn main:app`.
